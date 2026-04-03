@@ -7,6 +7,7 @@ import useSupabaseUser from '@/hooks/useSupabaseUser'
 import { ProblemSet } from '@/types/problemSet'
 import AddProblem from '@/components/AddProblem'
 import ProblemsList from '@/components/ProblemsList'
+import RenameSetForm from '@/components/RenameSetForm'
 
 type ProblemSetPageProps = {
   params: Promise<{
@@ -71,7 +72,19 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
           <p className="text-red-600">{errorMessage}</p>
         ) : problemSet ? (
           <div className="space-y-8">
-            <h1 className="text-3xl font-bold">{problemSet.name}</h1>
+            <div className="space-y-3">
+              <h1 className="text-3xl font-bold">{problemSet.name}</h1>
+              <RenameSetForm
+                currentName={problemSet.name}
+                itemId={problemSet.id}
+                itemLabel="problem set"
+                tableName="problem_sets"
+                onRename={(nextName) =>
+                  setProblemSet((prev) => (prev ? { ...prev, name: nextName } : prev))
+                }
+                variant="header"
+              />
+            </div>
 
             <section>
               <div className="mb-6 space-y-4">

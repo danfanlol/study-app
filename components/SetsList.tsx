@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { FlashcardSet } from '@/types/flashcardSet'
 import DeleteSetButton from '@/components/DeleteSetButton'
+import RenameSetForm from '@/components/RenameSetForm'
 import useSupabaseUser from '@/hooks/useSupabaseUser'
 
 type SetsListProps = {
@@ -71,6 +72,14 @@ export default function SetsList({
     setSets((prev) => prev.filter((setItem) => setItem.id !== id))
   }
 
+  function handleRenameSet(id: string, nextName: string) {
+    setSets((prev) =>
+      prev.map((setItem) =>
+        setItem.id === id ? { ...setItem, name: nextName } : setItem
+      )
+    )
+  }
+
   return (
     <div className="space-y-4">
       {sets.map((setItem) =>
@@ -87,13 +96,27 @@ export default function SetsList({
             />
           </div>
         ) : (
-          <Link
+          <div
             key={setItem.id}
-            href={`/sets/${setItem.id}`}
-            className="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:bg-gray-50"
+            className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
           >
-            <p className="text-lg font-semibold">{setItem.name}</p>
-          </Link>
+            <Link
+              href={`/sets/${setItem.id}`}
+              className="block min-w-0 flex-1 rounded-lg transition hover:text-blue-600"
+            >
+              <p className="text-lg font-semibold">{setItem.name}</p>
+            </Link>
+
+            <div className="sm:w-56">
+              <RenameSetForm
+                currentName={setItem.name}
+                itemId={setItem.id}
+                itemLabel="flashcard set"
+                tableName="flashcard_sets"
+                onRename={(nextName) => handleRenameSet(setItem.id, nextName)}
+              />
+            </div>
+          </div>
         )
       )}
     </div>

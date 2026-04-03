@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import AddFlashcard from '@/components/AddFlashcard'
 import ShowFlashcards from '@/components/ShowFlashcards'
 import ReviewFlashcards from '@/components/ReviewFlashcards'
+import RenameSetForm from '@/components/RenameSetForm'
 import useSupabaseUser from '@/hooks/useSupabaseUser'
 
 type SetPageProps = {
@@ -58,8 +59,20 @@ export default function SetDetailPage({ params }: SetPageProps) {
           Back to Flashcard Sets
         </Link>
 
-        <h1 className="mb-2 text-3xl font-bold">{setName || 'Flashcard Set'}</h1>
-        <p className="mb-6 text-gray-600">Manage flashcards in this set.</p>
+        <div className="mb-6 space-y-3">
+          <h1 className="text-3xl font-bold">{setName || 'Flashcard Set'}</h1>
+          <p className="text-gray-600">Manage flashcards in this set.</p>
+          {setName && !errorMessage && (
+            <RenameSetForm
+              currentName={setName}
+              itemId={setId}
+              itemLabel="flashcard set"
+              tableName="flashcard_sets"
+              onRename={setSetName}
+              variant="header"
+            />
+          )}
+        </div>
 
         {userLoading ? (
           <p>Checking session...</p>

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import useSupabaseUser from '@/hooks/useSupabaseUser'
 import { Problem } from '@/types/problem'
 import { ProblemImage } from '@/types/problemImage'
+import EditProblemForm from '@/components/EditProblemForm'
 
 const PROBLEM_IMAGES_BUCKET = 'problem-images'
 
@@ -114,7 +115,28 @@ export default function ProblemDetailPage({ params }: ProblemDetailPageProps) {
         ) : problem ? (
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold">{problem.title}</h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-3xl font-bold">{problem.title}</h1>
+
+                <EditProblemForm
+                  problemId={problem.id}
+                  problemSetId={problemSetId}
+                  currentTitle={problem.title}
+                  currentExplanation={problem.explanation}
+                  onSave={({ title, explanation }) => {
+                    setProblem((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            title,
+                            explanation,
+                          }
+                        : prev
+                    )
+                    setShowExplanation(Boolean(explanation))
+                  }}
+                />
+              </div>
 
               {problem.explanation && (
                 <div className="mt-4 space-y-3">
