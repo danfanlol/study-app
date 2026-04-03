@@ -13,7 +13,7 @@ export default function HomePage() {
         <div className="rounded-2xl bg-white p-8 shadow-lg">
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold">Flashcard Study App</h1>
+              <h1 className="text-3xl font-bold">StudyPro</h1>
               <p className="mt-2 text-sm text-gray-600">
                 {loading
                   ? 'Checking your session...'
