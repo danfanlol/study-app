@@ -18,13 +18,14 @@ type SetPageProps = {
 export default function SetDetailPage({ params }: SetPageProps) {
   const { setId } = use(params)
   const { user, loading: userLoading } = useSupabaseUser()
+  const userId = user?.id ?? null
   const [view, setView] = useState<'add' | 'show' | 'review'>('add')
   const [setName, setSetName] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     async function loadSetName() {
-      if (!user) {
+      if (!userId) {
         setSetName('')
         setErrorMessage('Please sign in to view this set.')
         return
@@ -34,7 +35,7 @@ export default function SetDetailPage({ params }: SetPageProps) {
         .from('flashcard_sets')
         .select('name')
         .eq('id', setId)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single()
 
       if (error) {
@@ -47,7 +48,7 @@ export default function SetDetailPage({ params }: SetPageProps) {
     }
 
     loadSetName()
-  }, [setId, user])
+  }, [setId, userId])
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-10">

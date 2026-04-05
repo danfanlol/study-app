@@ -12,13 +12,14 @@ type ShowFlashcardsProps = {
 
 export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
   const { user, loading: userLoading } = useSupabaseUser()
+  const userId = user?.id ?? null
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     async function loadFlashcards() {
-      if (!user) {
+      if (!userId) {
         setFlashcards([])
         setLoading(false)
         return
@@ -31,7 +32,7 @@ export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
         .from('flashcards')
         .select('*')
         .eq('set_id', setId)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -45,7 +46,7 @@ export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
     }
 
     loadFlashcards()
-  }, [setId, user])
+  }, [setId, userId])
 
   function handleRemoveDeletedCard(id: string) {
     setFlashcards((prev) => prev.filter((card) => card.id !== id))

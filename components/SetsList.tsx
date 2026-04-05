@@ -18,13 +18,14 @@ export default function SetsList({
   mode = 'browse',
 }: SetsListProps) {
   const { user, loading: userLoading } = useSupabaseUser()
+  const userId = user?.id ?? null
   const [sets, setSets] = useState<FlashcardSet[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     async function fetchSets() {
-      if (!user) {
+      if (!userId) {
         setSets([])
         setLoading(false)
         return
@@ -36,7 +37,7 @@ export default function SetsList({
       const { data, error } = await supabase
         .from('flashcard_sets')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -50,7 +51,7 @@ export default function SetsList({
     }
 
     fetchSets()
-  }, [user])
+  }, [userId])
 
   if (userLoading || loading) {
     return <p>Loading flashcard sets...</p>

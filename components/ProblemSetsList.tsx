@@ -17,13 +17,14 @@ export default function ProblemSetsList({
   mode = 'browse',
 }: ProblemSetsListProps) {
   const { user, loading: userLoading } = useSupabaseUser()
+  const userId = user?.id ?? null
   const [problemSets, setProblemSets] = useState<ProblemSet[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     async function loadProblemSets() {
-      if (!user) {
+      if (!userId) {
         setProblemSets([])
         setLoading(false)
         return
@@ -35,7 +36,7 @@ export default function ProblemSetsList({
       const { data, error } = await supabase
         .from('problem_sets')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -49,7 +50,7 @@ export default function ProblemSetsList({
     }
 
     loadProblemSets()
-  }, [user])
+  }, [userId])
 
   if (userLoading || loading) {
     return <p>Loading problem sets...</p>

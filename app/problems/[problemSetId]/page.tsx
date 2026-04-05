@@ -8,6 +8,7 @@ import { ProblemSet } from '@/types/problemSet'
 import AddProblem from '@/components/AddProblem'
 import ProblemsList from '@/components/ProblemsList'
 import RenameSetForm from '@/components/RenameSetForm'
+import ShuffleProblemsButton from '@/components/ShuffleProblemsButton'
 
 type ProblemSetPageProps = {
   params: Promise<{
@@ -18,6 +19,7 @@ type ProblemSetPageProps = {
 export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
   const { problemSetId } = use(params)
   const { user, loading: userLoading } = useSupabaseUser()
+  const userId = user?.id ?? null
   const [problemSet, setProblemSet] = useState<ProblemSet | null>(null)
   const [showAddProblem, setShowAddProblem] = useState(false)
   const [showDeleteProblems, setShowDeleteProblems] = useState(false)
@@ -26,7 +28,7 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
 
   useEffect(() => {
     async function loadProblemSet() {
-      if (!user) {
+      if (!userId) {
         setProblemSet(null)
         setErrorMessage('Please sign in to view this problem set.')
         setLoading(false)
@@ -40,7 +42,7 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
         .from('problem_sets')
         .select('*')
         .eq('id', problemSetId)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single()
 
       if (error || !data) {
@@ -54,7 +56,7 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
     }
 
     loadProblemSet()
-  }, [problemSetId, user])
+  }, [problemSetId, userId])
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-10">
@@ -89,6 +91,10 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
             <section>
               <div className="mb-6 space-y-4">
                 <div className="space-y-4">
+                  {!showAddProblem && (
+                    <ShuffleProblemsButton problemSetId={problemSet.id} />
+                  )}
+
                   <button
                     type="button"
                     onClick={() => {

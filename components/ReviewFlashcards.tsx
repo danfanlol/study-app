@@ -13,6 +13,7 @@ export default function ReviewFlashcards({
   setId,
 }: ReviewFlashcardsProps) {
   const { user, loading: userLoading } = useSupabaseUser()
+  const userId = user?.id ?? null
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
   const [reviewQueue, setReviewQueue] = useState<Flashcard[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,7 +23,7 @@ export default function ReviewFlashcards({
 
   useEffect(() => {
     async function loadFlashcards() {
-      if (!user) {
+      if (!userId) {
         setFlashcards([])
         setReviewQueue([])
         setReviewComplete(true)
@@ -37,7 +38,7 @@ export default function ReviewFlashcards({
         .from('flashcards')
         .select('*')
         .eq('set_id', setId)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -57,7 +58,7 @@ export default function ReviewFlashcards({
     }
 
     loadFlashcards()
-  }, [setId, user])
+  }, [setId, userId])
 
   function handleCorrect() {
     if (reviewQueue.length === 0) return

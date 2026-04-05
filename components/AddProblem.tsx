@@ -20,13 +20,13 @@ export default function AddProblem({ problemSetId }: AddProblemProps) {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
+  function generateProblemTitle() {
+    const randomId = crypto.getRandomValues(new Uint32Array(1))[0]
+    return `Problem ${randomId}`
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-
-    if (!title.trim()) {
-      setMessage('Please enter a title for this problem.')
-      return
-    }
 
     if (imageFiles.length === 0) {
       setMessage('Please choose at least one image.')
@@ -40,6 +40,8 @@ export default function AddProblem({ problemSetId }: AddProblemProps) {
 
     setLoading(true)
     setMessage('')
+    const trimmedTitle = title.trim()
+    const nextTitle = trimmedTitle || generateProblemTitle()
 
     const { data: problem, error: problemError } = await supabase
       .from('problems')
@@ -47,7 +49,7 @@ export default function AddProblem({ problemSetId }: AddProblemProps) {
         {
           user_id: user.id,
           problem_set_id: problemSetId,
-          title: title.trim(),
+          title: nextTitle,
           explanation: explanation.trim() || null,
         },
       ])
@@ -107,13 +109,13 @@ export default function AddProblem({ problemSetId }: AddProblemProps) {
 
       <div>
         <label htmlFor="problem-title" className="mb-2 block text-sm font-medium">
-          Title
+          Title (optional)
         </label>
         <input
           id="problem-title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          placeholder="Enter a title for this problem"
+          placeholder="Leave blank to auto-generate a title"
           className="w-full rounded-lg border p-3 outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>

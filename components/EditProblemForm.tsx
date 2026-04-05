@@ -1,8 +1,10 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import useSupabaseUser from '@/hooks/useSupabaseUser'
+import DeleteProblemButton from '@/components/DeleteProblemButton'
 
 type EditProblemFormProps = {
   problemId: string
@@ -10,6 +12,7 @@ type EditProblemFormProps = {
   currentTitle: string
   currentExplanation: string | null
   onSave: (nextValues: { title: string; explanation: string | null }) => void
+  onDelete?: () => void
 }
 
 export default function EditProblemForm({
@@ -18,7 +21,9 @@ export default function EditProblemForm({
   currentTitle,
   currentExplanation,
   onSave,
+  onDelete,
 }: EditProblemFormProps) {
+  const router = useRouter()
   const { user, loading: userLoading } = useSupabaseUser()
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(currentTitle)
@@ -38,6 +43,13 @@ export default function EditProblemForm({
     setExplanation(currentExplanation ?? '')
     setMessage('')
     setIsEditing(false)
+  }
+
+  function handleDelete() {
+    setIsEditing(false)
+    setMessage('')
+    onDelete?.()
+    router.push(`/problems/${problemSetId}`)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -158,6 +170,21 @@ export default function EditProblemForm({
         >
           Cancel
         </button>
+      </div>
+
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+        <div className="mb-3">
+          <p className="font-medium text-red-700">Delete this problem</p>
+          <p className="text-sm text-red-600">
+            This removes the problem and all saved images for it.
+          </p>
+        </div>
+
+        <DeleteProblemButton
+          problemId={problemId}
+          problemTitle={currentTitle}
+          onDelete={handleDelete}
+        />
       </div>
 
       {message && <p className="text-sm text-gray-700">{message}</p>}
