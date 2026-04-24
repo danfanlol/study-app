@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import useSupabaseUser from '@/hooks/useSupabaseUser'
 import { ProblemSet } from '@/types/problemSet'
@@ -9,6 +10,7 @@ import AddProblem from '@/components/AddProblem'
 import ProblemsList from '@/components/ProblemsList'
 import RenameSetForm from '@/components/RenameSetForm'
 import ShuffleProblemsButton from '@/components/ShuffleProblemsButton'
+import DeleteProblemSetButton from '@/components/DeleteProblemSetButton'
 
 type ProblemSetPageProps = {
   params: Promise<{
@@ -18,6 +20,7 @@ type ProblemSetPageProps = {
 
 export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
   const { problemSetId } = use(params)
+  const router = useRouter()
   const { user, loading: userLoading } = useSupabaseUser()
   const userId = user?.id ?? null
   const [problemSet, setProblemSet] = useState<ProblemSet | null>(null)
@@ -75,7 +78,14 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
         ) : problemSet ? (
           <div className="space-y-8">
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold">{problemSet.name}</h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-3xl font-bold">{problemSet.name}</h1>
+                <DeleteProblemSetButton
+                  problemSetId={problemSet.id}
+                  problemSetName={problemSet.name}
+                  onDelete={() => router.push('/problems')}
+                />
+              </div>
               <RenameSetForm
                 currentName={problemSet.name}
                 itemId={problemSet.id}

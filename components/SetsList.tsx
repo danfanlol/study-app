@@ -99,11 +99,11 @@ export default function SetsList({
         ) : (
           <div
             key={setItem.id}
-            className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between"
           >
             <Link
               href={`/sets/${setItem.id}`}
-              className="block min-w-0 flex-1 rounded-lg transition hover:text-blue-600"
+              className="block min-w-0 flex-1 rounded-lg"
             >
               <p className="text-lg font-semibold">{setItem.name}</p>
             </Link>

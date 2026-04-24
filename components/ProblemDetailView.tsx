@@ -22,6 +22,10 @@ type ProblemDetailViewProps = {
   shuffleMode?: boolean
 }
 
+function shuffleSessionKey(problemSetId: string) {
+  return `shuffle_session_${problemSetId}`
+}
+
 export default function ProblemDetailView({
   problemSetId,
   problemId,
@@ -37,6 +41,7 @@ export default function ProblemDetailView({
   const [loading, setLoading] = useState(true)
   const [shuffleLoading, setShuffleLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [allDone, setAllDone] = useState(false)
 
   useEffect(() => {
     async function loadProblem() {
@@ -69,6 +74,33 @@ export default function ProblemDetailView({
         return
       }
 
+      async function getShuffleIds(): Promise<{
+        data: { id: string }[] | null
+        error: { message: string } | null
+      }> {
+        const stored = sessionStorage.getItem(shuffleSessionKey(problemSetId))
+        if (stored) {
+          try {
+            const session = JSON.parse(stored) as { remainingIds: string[] }
+            return { data: session.remainingIds.map((id) => ({ id })), error: null }
+          } catch {
+            // corrupted session, fall through to DB
+          }
+        }
+        const result = await supabase
+          .from('problems')
+          .select('id')
+          .eq('problem_set_id', problemSetId)
+          .eq('user_id', userId)
+        if (!result.error && result.data) {
+          sessionStorage.setItem(
+            shuffleSessionKey(problemSetId),
+            JSON.stringify({ remainingIds: result.data.map((d) => d.id) })
+          )
+        }
+        return result
+      }
+
       const [{ data: imageData, error: imageError }, shuffleResult] = await Promise.all([
         supabase
           .from('problem_images')
@@ -78,11 +110,7 @@ export default function ProblemDetailView({
           .order('sort_order', { ascending: true })
           .order('created_at', { ascending: true }),
         shuffleMode
-          ? supabase
-              .from('problems')
-              .select('id')
-              .eq('problem_set_id', problemSetId)
-              .eq('user_id', userId)
+          ? getShuffleIds()
           : Promise.resolve({ data: null, error: null }),
       ])
 
@@ -128,23 +156,33 @@ export default function ProblemDetailView({
     loadProblem()
   }, [problemId, problemSetId, shuffleMode, userId])
 
-  function handleNextShuffleProblem() {
-    if (!shuffleMode || shuffleLoading || problemIds.length === 0) {
-      return
-    }
-
+  function navigateToNext(remaining: string[]) {
     const candidates =
-      problemIds.length > 1
-        ? problemIds.filter((candidateId) => candidateId !== problemId)
-        : problemIds
+      remaining.length > 1 ? remaining.filter((id) => id !== problemId) : remaining
+    if (candidates.length === 0) return
+    const nextId = candidates[Math.floor(Math.random() * candidates.length)]
+    setShuffleLoading(true)
+    router.push(`/problems/${problemSetId}/shuffle/${nextId}`)
+  }
 
-    if (candidates.length === 0) {
+  function handleCorrect() {
+    if (!shuffleMode || shuffleLoading) return
+    const updatedIds = problemIds.filter((id) => id !== problemId)
+    if (updatedIds.length === 0) {
+      sessionStorage.removeItem(shuffleSessionKey(problemSetId))
+      setAllDone(true)
       return
     }
+    sessionStorage.setItem(
+      shuffleSessionKey(problemSetId),
+      JSON.stringify({ remainingIds: updatedIds })
+    )
+    navigateToNext(updatedIds)
+  }
 
-    const nextProblemId = candidates[Math.floor(Math.random() * candidates.length)]
-    setShuffleLoading(true)
-    router.push(`/problems/${problemSetId}/shuffle/${nextProblemId}`)
+  function handleWrong() {
+    if (!shuffleMode || shuffleLoading || problemIds.length === 0) return
+    navigateToNext(problemIds)
   }
 
   return (
@@ -192,18 +230,52 @@ export default function ProblemDetailView({
               </div>
 
               {shuffleMode && (
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-900">
-                    SHUFFLE
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleNextShuffleProblem}
-                    disabled={shuffleLoading || problemIds.length === 0}
-                    className="rounded-lg bg-black px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-400"
-                  >
-                    {shuffleLoading ? 'Loading Next Problem...' : 'Next Problem'}
-                  </button>
+                <div className="mt-4 space-y-3">
+                  {allDone ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-900">
+                        SHUFFLE
+                      </span>
+                      <span className="font-medium text-green-700">
+                        All problems completed!
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sessionStorage.removeItem(shuffleSessionKey(problemSetId))
+                          router.push(`/problems/${problemSetId}`)
+                        }}
+                        className="rounded-lg bg-black px-4 py-3 font-medium text-white"
+                      >
+                        Back to Problem Set
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-900">
+                        SHUFFLE
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {problemIds.length} remaining
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCorrect}
+                        disabled={shuffleLoading}
+                        className="rounded-lg bg-green-600 px-4 py-3 font-medium text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:bg-gray-400"
+                      >
+                        {shuffleLoading ? 'Loading...' : 'Correct'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleWrong}
+                        disabled={shuffleLoading}
+                        className="rounded-lg bg-red-600 px-4 py-3 font-medium text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-gray-400"
+                      >
+                        {shuffleLoading ? 'Loading...' : 'Wrong'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

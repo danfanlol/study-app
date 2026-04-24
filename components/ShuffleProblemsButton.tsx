@@ -51,6 +51,7 @@ export default function ShuffleProblemsButton({
       return
     }
 
+    sessionStorage.removeItem(`shuffle_session_${problemSetId}`)
     const randomProblemId = problemIds[Math.floor(Math.random() * problemIds.length)]
     router.push(`/problems/${problemSetId}/shuffle/${randomProblemId}`)
   }

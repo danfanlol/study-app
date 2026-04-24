@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import SetsList from '@/components/SetsList'
+import CollectionsList from '@/components/CollectionsList'
 import useSupabaseUser from '@/hooks/useSupabaseUser'
 
-export default function SetsDashboard() {
+export default function CollectionsDashboard() {
   const { user } = useSupabaseUser()
   const [showDeleteOptions, setShowDeleteOptions] = useState(false)
 
@@ -15,10 +15,10 @@ export default function SetsDashboard() {
         {user ? (
           <>
             <Link
-              href="/sets/create"
+              href="/sets/collections/add"
               className="block rounded-lg bg-black px-4 py-3 text-center font-medium text-white"
             >
-              Create Flashcard Set
+              Add Collection
             </Link>
 
             <button
@@ -30,15 +30,8 @@ export default function SetsDashboard() {
                   : 'bg-gray-200 text-black hover:bg-gray-300'
               }`}
             >
-              {showDeleteOptions ? 'Done Deleting' : 'Delete Flashcard Set'}
+              {showDeleteOptions ? 'Done Deleting' : 'Delete Collection'}
             </button>
-
-            <Link
-              href="/sets/collections"
-              className="block rounded-lg bg-indigo-600 px-4 py-3 text-center font-medium text-white transition hover:bg-indigo-500"
-            >
-              Collections
-            </Link>
           </>
         ) : (
           <Link
@@ -51,19 +44,17 @@ export default function SetsDashboard() {
       </div>
 
       <section>
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-semibold">Your Flashcard Sets</h2>
-              {user && showDeleteOptions && (
-                <p className="mt-1 text-sm text-red-600">
-                  Delete mode is on. Choose a flashcard set below to remove it.
-                </p>
-              )}
-            </div>
+        <div className="mb-4">
+          <h2 className="text-2xl font-semibold">Your Collections</h2>
+          {user && showDeleteOptions && (
+            <p className="mt-1 text-sm text-red-600">
+              Delete mode is on. Choose a collection below to remove it.
+            </p>
+          )}
         </div>
 
-        <SetsList
-          emptyMessage="No flashcard sets yet. Create your first one above."
+        <CollectionsList
+          emptyMessage="No collections yet. Add your first one above."
           mode={showDeleteOptions && user ? 'delete' : 'browse'}
         />
       </section>
