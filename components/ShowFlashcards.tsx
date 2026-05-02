@@ -17,6 +17,12 @@ export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
 
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editFront, setEditFront] = useState('')
+  const [editBack, setEditBack] = useState('')
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState('')
+
   useEffect(() => {
     async function loadFlashcards() {
       if (!userId) {
@@ -50,6 +56,50 @@ export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
 
   function handleRemoveDeletedCard(id: string) {
     setFlashcards((prev) => prev.filter((card) => card.id !== id))
+    if (editingId === id) setEditingId(null)
+  }
+
+  function startEdit(card: Flashcard) {
+    setEditingId(card.id)
+    setEditFront(card.front)
+    setEditBack(card.back)
+    setEditError('')
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditError('')
+  }
+
+  async function saveEdit(card: Flashcard) {
+    if (!editFront.trim() || !editBack.trim()) {
+      setEditError('Both front and back are required.')
+      return
+    }
+
+    if (!user) return
+
+    setEditLoading(true)
+    setEditError('')
+
+    const { error } = await supabase
+      .from('flashcards')
+      .update({ front: editFront.trim(), back: editBack.trim() })
+      .eq('id', card.id)
+      .eq('user_id', user.id)
+
+    if (error) {
+      setEditError(`Error saving: ${error.message}`)
+    } else {
+      setFlashcards((prev) =>
+        prev.map((c) =>
+          c.id === card.id ? { ...c, front: editFront.trim(), back: editBack.trim() } : c
+        )
+      )
+      setEditingId(null)
+    }
+
+    setEditLoading(false)
   }
 
   return (
@@ -66,24 +116,78 @@ export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
         <p>No flashcards found in this set.</p>
       ) : (
         <div className="space-y-4">
-          {flashcards.map((card) => (
-            <div
-              key={card.id}
-              className="rounded-xl border border-gray-200 p-4 shadow-sm"
-            >
-              <p className="mb-2">
-                <span className="font-semibold">Front:</span> {card.front}
-              </p>
-              <p>
-                <span className="font-semibold">Back:</span> {card.back}
-              </p>
+          {flashcards.map((card) =>
+            editingId === card.id ? (
+              <div
+                key={card.id}
+                className="rounded-xl border border-blue-300 bg-blue-50 p-4 shadow-sm"
+              >
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm font-semibold">Front</label>
+                  <textarea
+                    value={editFront}
+                    onChange={(e) => setEditFront(e.target.value)}
+                    rows={3}
+                    className="w-full rounded-lg border p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm font-semibold">Back</label>
+                  <textarea
+                    value={editBack}
+                    onChange={(e) => setEditBack(e.target.value)}
+                    rows={3}
+                    className="w-full rounded-lg border p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                {editError && <p className="mb-2 text-sm text-red-600">{editError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => saveEdit(card)}
+                    disabled={editLoading}
+                    className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    {editLoading ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    disabled={editLoading}
+                    className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-medium text-black hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                key={card.id}
+                className="rounded-xl border border-gray-200 p-4 shadow-sm"
+              >
+                <p className="mb-2">
+                  <span className="font-semibold">Front:</span> {card.front}
+                </p>
+                <p className="mb-3">
+                  <span className="font-semibold">Back:</span> {card.back}
+                </p>
 
-              <DeleteFlashcardButton
-                flashcardId={card.id}
-                onDelete={handleRemoveDeletedCard}
-              />
-            </div>
-          ))}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(card)}
+                    className="rounded-lg bg-gray-200 px-3 py-2 text-sm font-medium text-black transition hover:bg-gray-300"
+                  >
+                    Edit
+                  </button>
+                  <DeleteFlashcardButton
+                    flashcardId={card.id}
+                    onDelete={handleRemoveDeletedCard}
+                  />
+                </div>
+              </div>
+            )
+          )}
         </div>
       )}
     </div>

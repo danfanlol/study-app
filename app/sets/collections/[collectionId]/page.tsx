@@ -85,6 +85,13 @@ export default function CollectionDetailPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
+  const [addMode, setAddMode] = useState(false)
+  const [availableSets, setAvailableSets] = useState<FlashcardSet[]>([])
+  const [selectedNewSetIds, setSelectedNewSetIds] = useState<Set<string>>(new Set())
+  const [addLoading, setAddLoading] = useState(false)
+  const [addError, setAddError] = useState('')
+  const [loadingAvailable, setLoadingAvailable] = useState(false)
+
   const sensors = useSensors(useSensor(PointerSensor))
 
   useEffect(() => {
@@ -149,7 +156,6 @@ export default function CollectionDetailPage() {
         return
       }
 
-      // Re-order sets according to the member sort_order sequence
       const setMap = new Map((setsData || []).map((s) => [s.id, s]))
       const orderedSets = setIds
         .map((id) => setMap.get(id))
@@ -245,6 +251,76 @@ export default function CollectionDetailPage() {
     setSaving(false)
   }
 
+  async function enterAddMode() {
+    if (!userId) return
+    setLoadingAvailable(true)
+    setAddError('')
+    setSelectedNewSetIds(new Set())
+
+    const { data, error } = await supabase
+      .from('flashcard_sets')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      setAddError(`Error loading sets: ${error.message}`)
+      setLoadingAvailable(false)
+      return
+    }
+
+    const currentSetIds = new Set(sets.map((s) => s.id))
+    setAvailableSets((data || []).filter((s) => !currentSetIds.has(s.id)))
+    setAddMode(true)
+    setLoadingAvailable(false)
+    setSearchResults(null)
+    setSearchQuery('')
+  }
+
+  function cancelAddMode() {
+    setAddMode(false)
+    setAvailableSets([])
+    setSelectedNewSetIds(new Set())
+    setAddError('')
+  }
+
+  function toggleNewSet(id: string) {
+    setSelectedNewSetIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function saveNewSets() {
+    if (!userId || selectedNewSetIds.size === 0) return
+    setAddLoading(true)
+    setAddError('')
+
+    const startOrder = sets.length
+    const members = Array.from(selectedNewSetIds).map((setId, index) => ({
+      collection_id: collectionId,
+      set_id: setId,
+      user_id: userId,
+      sort_order: startOrder + index,
+    }))
+
+    const { error } = await supabase
+      .from('flashcard_set_collection_members')
+      .insert(members)
+
+    if (error) {
+      setAddError(`Error adding sets: ${error.message}`)
+      setAddLoading(false)
+      return
+    }
+
+    const newSets = availableSets.filter((s) => selectedNewSetIds.has(s.id))
+    setSets((prev) => [...prev, ...newSets])
+    cancelAddMode()
+    setAddLoading(false)
+  }
+
   const displayedSets = searchResults !== null ? searchResults : sets
 
   return (
@@ -265,44 +341,111 @@ export default function CollectionDetailPage() {
           <>
             <h1 className="mb-6 text-3xl font-bold">{collection.name}</h1>
 
-            {sets.length > 0 && !reorderMode && (
+            {!reorderMode && !addMode && (
               <>
-                <form onSubmit={handleSearch} className="mb-4 flex gap-2">
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value)
-                      if (e.target.value === '') setSearchResults(null)
-                    }}
-                    placeholder="Search flashcard fronts..."
-                    className="flex-1 rounded-lg border p-3 outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                {sets.length > 0 && (
+                  <form onSubmit={handleSearch} className="mb-4 flex gap-2">
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value)
+                        if (e.target.value === '') setSearchResults(null)
+                      }}
+                      placeholder="Search flashcard fronts..."
+                      className="flex-1 rounded-lg border p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={searching || !searchQuery.trim()}
+                      className="rounded-lg bg-black px-4 py-3 font-medium text-white disabled:opacity-50"
+                    >
+                      {searching ? 'Searching...' : 'Search'}
+                    </button>
+                    {searchResults !== null && (
+                      <button
+                        type="button"
+                        onClick={clearSearch}
+                        className="rounded-lg bg-gray-200 px-4 py-3 font-medium text-black hover:bg-gray-300"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </form>
+                )}
+
+                <div className="mb-6 space-y-3">
                   <button
-                    type="submit"
-                    disabled={searching || !searchQuery.trim()}
-                    className="rounded-lg bg-black px-4 py-3 font-medium text-white disabled:opacity-50"
+                    type="button"
+                    onClick={enterAddMode}
+                    disabled={loadingAvailable}
+                    className="block w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium text-black transition hover:bg-gray-300 disabled:opacity-50"
                   >
-                    {searching ? 'Searching...' : 'Search'}
+                    {loadingAvailable ? 'Loading...' : 'Add Sets'}
                   </button>
-                  {searchResults !== null && (
+
+                  {sets.length > 0 && (
                     <button
                       type="button"
-                      onClick={clearSearch}
-                      className="rounded-lg bg-gray-200 px-4 py-3 font-medium text-black hover:bg-gray-300"
+                      onClick={enterReorderMode}
+                      className="block w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium text-black transition hover:bg-gray-300"
                     >
-                      Clear
+                      Reorder Sets
                     </button>
                   )}
-                </form>
-
-                <button
-                  type="button"
-                  onClick={enterReorderMode}
-                  className="mb-6 block w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium text-black transition hover:bg-gray-300"
-                >
-                  Reorder Sets
-                </button>
+                </div>
               </>
+            )}
+
+            {addMode && (
+              <div className="mb-6">
+                <p className="mb-3 text-sm font-medium text-gray-700">
+                  Select sets to add to this collection:
+                </p>
+
+                {availableSets.length === 0 ? (
+                  <p className="mb-4 text-sm text-gray-500">
+                    All your flashcard sets are already in this collection.
+                  </p>
+                ) : (
+                  <div className="mb-4 space-y-2">
+                    {availableSets.map((set) => (
+                      <label
+                        key={set.id}
+                        className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedNewSetIds.has(set.id)}
+                          onChange={() => toggleNewSet(set.id)}
+                          className="h-4 w-4"
+                        />
+                        <span className="font-medium">{set.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {addError && <p className="mb-3 text-sm text-red-600">{addError}</p>}
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={saveNewSets}
+                    disabled={addLoading || selectedNewSetIds.size === 0}
+                    className="flex-1 rounded-lg bg-black px-4 py-3 text-center font-medium text-white disabled:opacity-50"
+                  >
+                    {addLoading ? 'Adding...' : `Add${selectedNewSetIds.size > 0 ? ` (${selectedNewSetIds.size})` : ''}`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelAddMode}
+                    disabled={addLoading}
+                    className="flex-1 rounded-lg bg-gray-200 px-4 py-3 text-center font-medium text-black hover:bg-gray-300 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
 
             {reorderMode && (
@@ -353,9 +496,9 @@ export default function CollectionDetailPage() {
                   </div>
                 </SortableContext>
               </DndContext>
-            ) : displayedSets.length === 0 && searchResults === null ? (
+            ) : !addMode && displayedSets.length === 0 && searchResults === null ? (
               <p className="text-gray-500">No flashcard sets in this collection.</p>
-            ) : displayedSets.length > 0 ? (
+            ) : !addMode && displayedSets.length > 0 ? (
               <div className="space-y-4">
                 {displayedSets.map((set) => (
                   <Link

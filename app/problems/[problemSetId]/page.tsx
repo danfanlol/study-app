@@ -26,6 +26,7 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
   const [problemSet, setProblemSet] = useState<ProblemSet | null>(null)
   const [showAddProblem, setShowAddProblem] = useState(false)
   const [showDeleteProblems, setShowDeleteProblems] = useState(false)
+  const [filterQuery, setFilterQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -132,6 +133,16 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
                 </div>
 
                 {!showAddProblem && (
+                  <input
+                    type="text"
+                    value={filterQuery}
+                    onChange={(e) => setFilterQuery(e.target.value)}
+                    placeholder="Search problems..."
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                )}
+
+                {!showAddProblem && (
                   <h2 className="text-2xl font-semibold">Saved Problems</h2>
                 )}
               </div>
@@ -148,6 +159,7 @@ export default function ProblemSetDetailPage({ params }: ProblemSetPageProps) {
                   problemSetId={problemSet.id}
                   emptyMessage="No problems yet. Add your first one above."
                   mode={showDeleteProblems ? 'delete' : 'browse'}
+                  filterQuery={filterQuery}
                 />
               )}
             </section>
