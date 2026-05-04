@@ -22,6 +22,7 @@ export default function SetDetailPage({ params }: SetPageProps) {
   const [view, setView] = useState<'add' | 'show' | 'review'>('add')
   const [setName, setSetName] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [filterQuery, setFilterQuery] = useState('')
 
   useEffect(() => {
     async function loadSetName() {
@@ -110,8 +111,18 @@ export default function SetDetailPage({ params }: SetPageProps) {
               </button>
             </div>
 
+            {view === 'show' && (
+              <input
+                type="text"
+                value={filterQuery}
+                onChange={(e) => setFilterQuery(e.target.value)}
+                placeholder="Search flashcards..."
+                className="mb-6 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-gray-400"
+              />
+            )}
+
             {view === 'add' && <AddFlashcard setId={setId} />}
-            {view === 'show' && <ShowFlashcards setId={setId} />}
+            {view === 'show' && <ShowFlashcards setId={setId} filterQuery={filterQuery} />}
             {view === 'review' && <ReviewFlashcards setId={setId} />}
           </>
         )}

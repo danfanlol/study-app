@@ -8,9 +8,10 @@ import useSupabaseUser from '@/hooks/useSupabaseUser'
 
 type ShowFlashcardsProps = {
   setId: string
+  filterQuery?: string
 }
 
-export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
+export default function ShowFlashcards({ setId, filterQuery = '' }: ShowFlashcardsProps) {
   const { user, loading: userLoading } = useSupabaseUser()
   const userId = user?.id ?? null
   const [flashcards, setFlashcards] = useState<Flashcard[]>([])
@@ -102,6 +103,15 @@ export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
     setEditLoading(false)
   }
 
+  const query = filterQuery.trim().toLowerCase()
+  const visibleCards = query
+    ? flashcards.filter(
+        (c) =>
+          c.front.toLowerCase().includes(query) ||
+          c.back.toLowerCase().includes(query)
+      )
+    : flashcards
+
   return (
     <div>
       <h2 className="mb-4 text-2xl font-semibold">All Flashcards</h2>
@@ -114,9 +124,11 @@ export default function ShowFlashcards({ setId }: ShowFlashcardsProps) {
         <p>{errorMessage}</p>
       ) : flashcards.length === 0 ? (
         <p>No flashcards found in this set.</p>
+      ) : visibleCards.length === 0 ? (
+        <p>No flashcards match your search.</p>
       ) : (
         <div className="space-y-4">
-          {flashcards.map((card) =>
+          {visibleCards.map((card) =>
             editingId === card.id ? (
               <div
                 key={card.id}
