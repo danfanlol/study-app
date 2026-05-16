@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AddFlashcard from '@/components/AddFlashcard'
 import ShowFlashcards from '@/components/ShowFlashcards'
@@ -19,6 +20,9 @@ export default function SetDetailPage({ params }: SetPageProps) {
   const { setId } = use(params)
   const { user, loading: userLoading } = useSupabaseUser()
   const userId = user?.id ?? null
+  const searchParams = useSearchParams()
+  const backHref = searchParams.get('from') ?? '/sets'
+  const backLabel = searchParams.get('from') ? 'Back to Collection' : 'Back to Flashcard Sets'
   const [view, setView] = useState<'add' | 'show' | 'review'>('add')
   const [setName, setSetName] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -55,10 +59,10 @@ export default function SetDetailPage({ params }: SetPageProps) {
     <main className="min-h-screen bg-gray-100 px-4 py-10">
       <div className="mx-auto w-full max-w-3xl rounded-2xl bg-white p-8 shadow-lg">
         <Link
-          href="/sets"
+          href={backHref}
           className="mb-4 inline-block text-sm font-medium text-blue-600 hover:underline"
         >
-          Back to Flashcard Sets
+          {backLabel}
         </Link>
 
         <div className="mb-6 space-y-3">

@@ -185,6 +185,20 @@ export default function ProblemDetailView({
     navigateToNext(problemIds)
   }
 
+  function handleDeleteInShuffle() {
+    const updatedIds = problemIds.filter((id) => id !== problemId)
+    if (updatedIds.length === 0) {
+      sessionStorage.removeItem(shuffleSessionKey(problemSetId))
+      router.push(`/problems/${problemSetId}`)
+      return
+    }
+    sessionStorage.setItem(
+      shuffleSessionKey(problemSetId),
+      JSON.stringify({ remainingIds: updatedIds })
+    )
+    navigateToNext(updatedIds)
+  }
+
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-10">
       <div className="mx-auto w-full max-w-4xl rounded-2xl bg-white p-8 shadow-lg">
@@ -226,6 +240,7 @@ export default function ProblemDetailView({
                     setProblem(null)
                     setImages([])
                   }}
+                  navigateAfterDelete={shuffleMode ? handleDeleteInShuffle : undefined}
                 />
               </div>
 

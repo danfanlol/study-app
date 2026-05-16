@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase'
 import useSupabaseUser from '@/hooks/useSupabaseUser'
 import { FlashcardSet } from '@/types/flashcardSet'
 import { FlashcardSetCollection } from '@/types/flashcardSetCollection'
+import ReviewCollectionFlashcards from '@/components/ReviewCollectionFlashcards'
 
 function GripIcon() {
   return (
@@ -85,6 +86,7 @@ export default function CollectionDetailPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
+  const [reviewMode, setReviewMode] = useState(false)
   const [addMode, setAddMode] = useState(false)
   const [availableSets, setAvailableSets] = useState<FlashcardSet[]>([])
   const [selectedNewSetIds, setSelectedNewSetIds] = useState<Set<string>>(new Set())
@@ -341,7 +343,7 @@ export default function CollectionDetailPage() {
           <>
             <h1 className="mb-6 text-3xl font-bold">{collection.name}</h1>
 
-            {!reorderMode && !addMode && (
+            {!reorderMode && !addMode && !reviewMode && (
               <>
                 {sets.length > 0 && (
                   <form onSubmit={handleSearch} className="mb-4 flex gap-2">
@@ -390,6 +392,16 @@ export default function CollectionDetailPage() {
                       className="block w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium text-black transition hover:bg-gray-300"
                     >
                       Reorder Sets
+                    </button>
+                  )}
+
+                  {sets.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setReviewMode(true)}
+                      className="block w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium text-black transition hover:bg-gray-300"
+                    >
+                      Review
                     </button>
                   )}
                 </div>
@@ -448,6 +460,19 @@ export default function CollectionDetailPage() {
               </div>
             )}
 
+            {reviewMode && (
+              <div className="mb-6">
+                <button
+                  type="button"
+                  onClick={() => setReviewMode(false)}
+                  className="mb-6 block w-full rounded-lg bg-gray-200 px-4 py-3 text-center font-medium text-black transition hover:bg-gray-300"
+                >
+                  Stop Review
+                </button>
+                <ReviewCollectionFlashcards setIds={sets.map((s) => s.id)} />
+              </div>
+            )}
+
             {reorderMode && (
               <div className="mb-6 flex gap-3">
                 <button
@@ -503,7 +528,7 @@ export default function CollectionDetailPage() {
                 {displayedSets.map((set) => (
                   <Link
                     key={set.id}
-                    href={`/sets/${set.id}`}
+                    href={`/sets/${set.id}?from=/sets/collections/${collectionId}`}
                     className="flex items-center rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:bg-gray-100"
                   >
                     <p className="text-lg font-semibold">{set.name}</p>

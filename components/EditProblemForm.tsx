@@ -13,6 +13,7 @@ type EditProblemFormProps = {
   currentExplanation: string | null
   onSave: (nextValues: { title: string; explanation: string | null }) => void
   onDelete?: () => void
+  navigateAfterDelete?: () => void
 }
 
 export default function EditProblemForm({
@@ -22,6 +23,7 @@ export default function EditProblemForm({
   currentExplanation,
   onSave,
   onDelete,
+  navigateAfterDelete,
 }: EditProblemFormProps) {
   const router = useRouter()
   const { user, loading: userLoading } = useSupabaseUser()
@@ -49,7 +51,11 @@ export default function EditProblemForm({
     setIsEditing(false)
     setMessage('')
     onDelete?.()
-    router.push(`/problems/${problemSetId}`)
+    if (navigateAfterDelete) {
+      navigateAfterDelete()
+    } else {
+      router.push(`/problems/${problemSetId}`)
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
