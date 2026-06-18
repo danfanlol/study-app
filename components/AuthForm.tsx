@@ -129,6 +129,12 @@ export default function AuthForm() {
               : 'Create Account'}
         </button>
 
+        {mode === 'signin' && (
+          <Link href="/forgot-password" className="block text-sm text-blue-600 hover:underline">
+            Forgot your password?
+          </Link>
+        )}
+
         {message && <p className="text-sm text-gray-700">{message}</p>}
       </form>
 
