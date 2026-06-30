@@ -21,8 +21,12 @@ export default function SetDetailPage({ params }: SetPageProps) {
   const { user, loading: userLoading } = useSupabaseUser()
   const userId = user?.id ?? null
   const searchParams = useSearchParams()
-  const backHref = searchParams.get('from') ?? '/sets'
-  const backLabel = searchParams.get('from') ? 'Back to Collection' : 'Back to Flashcard Sets'
+  const fromParam = searchParams.get('from') ?? ''
+  const backHref = fromParam || '/sets'
+  const backLabel = fromParam ? 'Back to Collection' : 'Back to Flashcard Sets'
+  const collectionId = fromParam.startsWith('/sets/collections/')
+    ? fromParam.split('/').pop()
+    : undefined
   const [view, setView] = useState<'add' | 'show' | 'review'>('add')
   const [setName, setSetName] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -125,7 +129,7 @@ export default function SetDetailPage({ params }: SetPageProps) {
               />
             )}
 
-            {view === 'add' && <AddFlashcard setId={setId} />}
+            {view === 'add' && <AddFlashcard setId={setId} collectionId={collectionId} />}
             {view === 'show' && <ShowFlashcards setId={setId} filterQuery={filterQuery} />}
             {view === 'review' && <ReviewFlashcards setId={setId} />}
           </>
